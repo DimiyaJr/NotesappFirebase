@@ -95,7 +95,6 @@
             android:textAlignment="center"
             android:textColor="@color/material_dynamic_neutral30" />
 
-
     </LinearLayout>
 
 
