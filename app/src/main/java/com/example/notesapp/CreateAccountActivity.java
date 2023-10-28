@@ -1,13 +1,20 @@
 package com.example.notesapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.util.Patterns;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class CreateAccountActivity extends AppCompatActivity {
 
@@ -38,8 +45,48 @@ public class CreateAccountActivity extends AppCompatActivity {
         String password  = passwordEditText.getText().toString();
         String confirmPassword  = confirmPasswordEditText.getText().toString();
 
+        boolean isValidated = validateData(email,password,confirmPassword);
+        if(!isValidated){
+            return;
+        }
 
+        createAccountInFirebase(email,password);
 
+    }
+
+    private void createAccountInFirebase(String email, String password) {
+        changeInProgress(true);
+
+        FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
+        firebaseAuth.createUserWithEmailAndPassword(email,password).addOnCompleteListener(CreateAccountActivity.this,
+                new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        changeInProgress(false);
+                        if(task.isSuccessful()){
+                            //creating acc is done
+                            Utility.showToast(CreateAccountActivity.this,"Successfully create account,Check email to verify");
+                            firebaseAuth.getCurrentUser().sendEmailVerification();
+                            firebaseAuth.signOut();
+                            finish();
+                        }else{
+                            //failure
+                            Utility.showToast(CreateAccountActivity.this,task.getException().getLocalizedMessage());
+                        }
+                    }
+                }
+        );
+
+    }
+
+    void changeInProgress(boolean inProgress){
+        if(inProgress){
+            progressBar.setVisibility(View.VISIBLE);
+            createAccountBtn.setVisibility(View.GONE);
+        }else{
+            progressBar.setVisibility(View.GONE);
+            createAccountBtn.setVisibility(View.VISIBLE);
+        }
     }
 
     boolean validateData(String email,String password,String confirmPassword){
